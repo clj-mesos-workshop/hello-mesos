@@ -38,7 +38,7 @@
   #'system."
   []
   (compile-uberjar)
-  (alter-var-root #'system (constantly (sys/scheduler-system "mesosLeader:5050" 1))))
+  (alter-var-root #'system (constantly (sys/scheduler-system "localhost:5050" 1))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
