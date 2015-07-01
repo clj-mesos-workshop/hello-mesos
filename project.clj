@@ -11,6 +11,7 @@
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.7"]]
                    :source-paths ["dev"]}
-             :user {:plugins [[cider/cider-nrepl "0.9.1"]
+             :user {:plugins [[refactor-nrepl "1.0.5"]
+                              [cider/cider-nrepl "0.9.1"]
                               [lein-gorilla "0.3.4"]]}
              :uberjar {:aot :all}})

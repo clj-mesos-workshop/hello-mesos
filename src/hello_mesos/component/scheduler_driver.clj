@@ -1,6 +1,6 @@
 (ns hello-mesos.component.scheduler-driver
-  (:require [com.stuartsierra.component :as component]
-            [clj-mesos.scheduler :as mesos]))
+  (:require [clj-mesos.scheduler :as mesos]
+            [com.stuartsierra.component :as component]))
 
 (defrecord SchedulerDriver [master scheduler driver]
   component/Lifecycle

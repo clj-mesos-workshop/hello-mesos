@@ -1,6 +1,6 @@
 (ns hello-mesos.component.executor-driver
-  (:require [com.stuartsierra.component :as component]
-            [clj-mesos.executor :as mesos]))
+  (:require [clj-mesos.executor :as mesos]
+            [com.stuartsierra.component :as component]))
 
 (defrecord ExecutorDriver [executor driver]
   component/Lifecycle

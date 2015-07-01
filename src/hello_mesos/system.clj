@@ -1,10 +1,10 @@
 (ns hello-mesos.system
   (:require [com.stuartsierra.component :as component]
-            [hello-mesos.component.scheduler-driver :refer [new-scheduler-driver]]
             [hello-mesos.component.executor-driver :refer [new-executor-driver]]
+            [hello-mesos.component.scheduler-driver :refer [new-scheduler-driver]]
             [hello-mesos.component.scheduler :refer [new-scheduler]]
-            [hello-mesos.scheduler :refer [scheduler]]
-            [hello-mesos.executor :refer [executor]])
+            [hello-mesos.executor :refer [executor]]
+            [hello-mesos.scheduler :refer [scheduler]])
   (:gen-class))
 
 (defn executor-system
