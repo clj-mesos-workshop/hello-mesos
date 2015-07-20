@@ -15,6 +15,9 @@
             [leiningen.core.project :as p]
             [leiningen.uberjar :refer [uberjar]]))
 
+(def configuration (atom {:mesos-master "mesos://127.0.0.1:5050"
+                          :webui-port 5556}))
+
 (defn load-project
   []
   (p/read (str (io/file (System/getProperty "user.dir") "./project.clj"))))

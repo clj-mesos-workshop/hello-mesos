@@ -13,5 +13,6 @@
                    :source-paths ["dev"]}
              :user {:plugins [[refactor-nrepl "1.0.5"]
                               [cider/cider-nrepl "0.9.1"]
+                              [refactor-nrepl "1.1.0"]
                               [lein-gorilla "0.3.4"]]}
              :uberjar {:aot :all}})
