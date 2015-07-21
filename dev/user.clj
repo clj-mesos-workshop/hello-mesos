@@ -15,8 +15,7 @@
             [leiningen.core.project :as p]
             [leiningen.uberjar :refer [uberjar]]))
 
-(def configuration (atom {:mesos-master "mesos://127.0.0.1:5050"
-                          :webui-port 5556}))
+(def configuration (atom nil))
 
 (defn load-project
   []
@@ -29,6 +28,12 @@
          (catch Exception e
            (.printStackTrace e)))))
 
+
+(defn- get-config [k]
+  (if-not @configuration
+    (println "You have not set the configuration variable yet.")
+    (get @configuration k)))
+
 (def system
   "A Var containing an object representing the application under
   development."
@@ -39,7 +44,7 @@
   #'system."
   []
   (compile-uberjar)
-  (alter-var-root #'system (constantly (sys/scheduler-system "127.0.0.1:5050" 1))))
+  (alter-var-root #'system (constantly (sys/scheduler-system (get-config :mesos-master) 1))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
