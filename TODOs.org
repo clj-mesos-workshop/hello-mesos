@@ -1,0 +1,2 @@
+* Add :jvm-opts commented out in project.clj
+* Do screencast of setting up
