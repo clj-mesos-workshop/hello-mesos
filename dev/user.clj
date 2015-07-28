@@ -12,21 +12,14 @@
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]
             [com.stuartsierra.component :as component]
             [hello-mesos.system :as sys]
-            [leiningen.core.project :as p]
-            [leiningen.uberjar :refer [uberjar]]))
+            [clojure.java.shell :refer [sh]]))
 
 (def configuration (atom nil))
 
-(defn load-project
+(defn build-uberjar
   []
-  (p/read (str (io/file (System/getProperty "user.dir") "./project.clj"))))
-
-(defn compile-uberjar
-  []
-  (let [project (load-project)]
-    (try (uberjar project 'hello-mesos.system)
-         (catch Exception e
-           (.printStackTrace e)))))
+  (println "building jar")
+  (sh "lein" "uberjar"))
 
 
 (defn- get-config [k]
@@ -43,8 +36,9 @@
   "Creates and initializes the system under development in the Var
   #'system."
   []
-  (compile-uberjar)
-  (alter-var-root #'system (constantly (sys/scheduler-system (get-config :mesos-master) 1))))
+;;  (alter-var-root #'system (constantly (sys/scheduler-system (get-config :mesos-master) 1))))
+  (build-uberjar)
+  (alter-var-root #'system (constantly (sys/scheduler-system "zk://10.10.4.2:2181/mesos" 1))))
 
 (defn start
   "Starts the system running, updates the Var #'system."

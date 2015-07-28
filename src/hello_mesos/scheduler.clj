@@ -10,7 +10,7 @@
                 :mem 128.0}
     :executor {:executor-id "hello-mesos-executor"
                :command {:shell true
-                         :value "java -jar /hello-mesos/target/hello-mesos-0.1.0-SNAPSHOT-standalone.jar executor" }}}])
+                         :value "java -jar /vagrant/target/uberjar/hello-mesos-0.1.0-SNAPSHOT-standalone.jar -m hello-mesos.system executor" }}}])
 
 (defn scheduler
   [scheduler-state]
