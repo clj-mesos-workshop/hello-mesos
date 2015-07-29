@@ -8,6 +8,7 @@
                  [com.stuartsierra/component "0.2.2"]
                  [leiningen "2.5.1"]]
   :main ^:skip-aot gorilla-test.core
+  ;; :jvm-opts ["-Djava.library.path=/path/to/libmesos.{so,dylib}"]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.7"]]
                    :source-paths ["dev"]}

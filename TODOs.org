@@ -1,2 +1,5 @@
-* Add :jvm-opts commented out in project.clj
-* Do screencast of setting up
+* DONE Add :jvm-opts commented out in project.clj
+  CLOSED: [2015-07-24 Fri 18:51]
+* Do screencast of setting up hello-mesos
+** Mac
+** Linux/Vagrant
