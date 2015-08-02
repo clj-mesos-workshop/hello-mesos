@@ -22,11 +22,12 @@
    (resourceOffers [driver offers]
                    (doseq [offer offers]
                      (let [uuid (str (java.util.UUID/randomUUID))]
-                       (when (< 0 (:to-launch @scheduler-state))
+                       (if (< 0 (:to-launch @scheduler-state))
                          (try
                            (mesos/launch-tasks driver (:id offer) (tasks-info uuid
                                                                               offer))
                            (println (tasks-info uuid offer))
                            (swap! scheduler-state update-in [:to-launch] dec)
                            (catch Exception e
-                             (.printStackTrace e)))))))))
+                             (.printStackTrace e)))
+                         (mesos/decline-offer driver (:id offer))))))))
