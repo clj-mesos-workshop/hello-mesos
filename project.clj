@@ -4,11 +4,10 @@
   :license {:name "MIT"
             :url "https://github.com/edpaget/hello-mesos/LICENSE"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [bdisraeli/clj-mesos "0.20.9-SNAPSHOT"]
+                 [edpaget/clj-mesos "0.22.1-SNAPSHOT"]
                  [com.stuartsierra/component "0.2.2"]
                  [leiningen "2.5.1"]]
-  :main ^:skip-aot gorilla-test.core
-  ;; :jvm-opts ["-Djava.library.path=/path/to/libmesos.{so,dylib}"]
+  ;;:main ^:skip-aot gorilla-test.core
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.7"]]
                    :source-paths ["dev"]}
