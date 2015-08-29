@@ -10,8 +10,10 @@
             [clojure.string :as str]
             [clojure.test :as test]
             [clojure.tools.namespace.repl :refer [refresh refresh-all]]
+            [alembic.still :refer [lein]]
             [com.stuartsierra.component :as component]
             [hello-mesos.system :as sys]
+            [hello-mesos.scheduler :as sched]
             [clojure.java.shell :refer [sh]]))
 
 (def configuration (atom nil))
@@ -37,8 +39,11 @@
   #'system."
   []
 ;;  (alter-var-root #'system (constantly (sys/scheduler-system (get-config :mesos-master) 1))))
-  (build-uberjar)
-  (alter-var-root #'system (constantly (sys/scheduler-system "zk://10.10.4.2:2181/mesos" 1))))
+  ;;(build-uberjar)
+  (lein uberjar)
+  (alter-var-root #'system (constantly (sys/scheduler-system "zk://10.10.4.2:2181/mesos"
+                                                             1
+                                                             sched/jar-task-info))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
