@@ -1,4 +1,6 @@
 #!/bin/bash
+# TODO: validate slave IPs match too
+# TODO: connectivity between servers
 CURDIR=$(dirname "$0")
 EXPECTED_MASTER_IP="10.10.4.2"
 RED='\033[0;31m'
