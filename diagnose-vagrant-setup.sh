@@ -59,6 +59,18 @@ validate_master_ip_matches_with_vagrantfile(){
     echo $actual_master_ip | grep $EXPECTED_MASTER_IP && success "Master IP in the machine matches with $EXPECTED_MASTER_IP" || failed "Invalid Master IP for the machine than what vagrant expects" $actual_master_ip $EXPECTED_MASTER_IP
 }
 
+validate_zookeeper_running(){
+    vagrant ssh master <<EOF | grep imok
+echo ruok | nc localhost 2181
+EOF
+    if [ "$?" = "0" ];
+    then
+        success "Zookeeper is running on Master"
+    else
+        failed "Zookeeper is not running on Master"
+    fi
+}
+
 validate_mesos_master_running(){
     vagrant ssh master <<EOF | grep running
 sudo service mesos-master status
@@ -119,6 +131,7 @@ EOF
 
 
 validate_master_ip
+validate_zookeeper_running
 validate_slave_counts
 validate_master_ip_matches_with_vagrantfile
 validate_mesos_master_running

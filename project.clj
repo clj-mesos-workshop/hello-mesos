@@ -9,6 +9,7 @@
                  [com.stuartsierra/component "0.2.3"]
                  [org.clojure/tools.logging "0.2.6"]
                  [leiningen "2.5.1"]]
+  :local-repo ".m2"
   ;;:main ^:skip-aot gorilla-test.core
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.7"]
