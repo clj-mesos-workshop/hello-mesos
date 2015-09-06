@@ -59,10 +59,68 @@ validate_master_ip_matches_with_vagrantfile(){
     echo $actual_master_ip | grep $EXPECTED_MASTER_IP && success "Master IP in the machine matches with $EXPECTED_MASTER_IP" || failed "Invalid Master IP for the machine than what vagrant expects" $actual_master_ip $EXPECTED_MASTER_IP
 }
 
+validate_mesos_master_running(){
+    vagrant ssh master <<EOF | grep running
+sudo service mesos-master status
+EOF
+    if [ "$?" = "0" ];
+    then
+        success "mesos-master service is running"
+        MASTER_URL="http://$EXPECTED_MASTER_IP:5050"
+        vagrant ssh master <<EOF | grep 200
+curl -IsS $MASTER_URL
+EOF
+        if [ "$?" = "0" ];
+        then
+            success "mesos-master is listening on $MASTER_URL"
+        else
+            failed "mesos-master is running but not listening on $MASTER_URL"
+        fi
+    else
+        failed "mesos-master service is not running"
+    fi
+}
 
+validate_slaves_reachable_from_master(){
+    slave_ips=$(get_hosts | grep slave | cut -d' ' -f1)
+    for ip in $slave_ips ; do
+        echo "Checking $ip"
+        #name=$(get_hosts | grep "$ip" | cut -d' ' -f2)
+        SLAVE_URL="http://$ip:5051/state.json"
+        vagrant ssh master <<EOF | grep 200
+curl -IsS $SLAVE_URL
+EOF
+        if [ "$?" = "0" ];
+        then
+            success "mesos-slave on $ip is reachable from Master"
+        else
+            failed "mesos-slave on $ip is not reachable from Master"
+        fi
+    done
+}
+
+validate_master_reachable_from_slaves(){
+    slave_names=$(get_hosts | grep slave | cut -d' ' -f3)
+    for name in $slave_names; do
+        echo "Checking from $name"
+        MASTER_URL="http://$EXPECTED_MASTER_IP:5050"
+        vagrant ssh $name <<EOF | grep 200
+curl -IsS $MASTER_URL
+EOF
+        if [ "$?" = "0" ];
+        then
+            success "mesos-master on $MASTER_URL is rechable from $name"
+        else
+            failed "mesos-master on $MASTER_URL is not reachable from $name"
+        fi
+    done
+}
 
 
 
 validate_master_ip
 validate_slave_counts
 validate_master_ip_matches_with_vagrantfile
+validate_mesos_master_running
+validate_slaves_reachable_from_master
+validate_master_reachable_from_slaves
