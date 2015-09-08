@@ -48,9 +48,7 @@
   [scheduler-state task-launcher]
   (mesos/scheduler
    (statusUpdate [driver status]
-                 (condp = (:task-state status)
-                   :task-running (println status)
-                   (println status)))
+                   (println status))
    (resourceOffers [driver offers]
                    (doseq [offer offers]
                      (let [uuid (str (java.util.UUID/randomUUID))]
