@@ -48,11 +48,14 @@
   [scheduler-state task-launcher]
   (mesos/scheduler
    (statusUpdate [driver status]
-                 (condp = (:task-state status)
+                 ;(println "[DEBUG]" status)
+                 (condp = (:state status)
                    :task-running (println status)
-                   (println status)))
+                   :task-lost (swap! scheduler-state update-in [:to-launch] inc)
+                   (println "[statusUpdate]" status)))
    (resourceOffers [driver offers]
                    (doseq [offer offers]
+                     ;(println "[resourceOffers]" offer)
                      (let [uuid (str (java.util.UUID/randomUUID))]
                        (if (and (< 0 (:to-launch @scheduler-state))
                                 (resources? (:resources offer)))
