@@ -26,8 +26,9 @@
                           :exhibitor {:hosts []
                                       :port 2181
                                       :backup "zk://localhost:2181"}
-                          :state (atom {:tasks 1})
+                          :state {:tasks 1}
                           :task-launcher sched/jar-task-info
+                          :task-type sched/jar-task-info
                           :zk-path "/hello-mesos"}))
 
 (defn- get-config [k]
@@ -43,21 +44,12 @@
 (defn init
   "Creates and initializes the system under development in the Var
   #'system."
-  [& [task-type]]
-  (let [task-type (or task-type :jar)]
-    (condp = task-type
-      :jar (do (lein uberjar)
-               (swap! configuration assoc :task-launcher sched/jar-task-info))
-      :ha (do (lein uberjar)
-              (swap! configuration assoc :task-launcher sched/jar-task-info))
-      :shell (swap! configuration assoc :task-launcher sched/shell-task-info)
-      :docker (swap! configuration assoc :task-launcher sched/docker-task-info))
-
+  [] 
     (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
-                                                               (get-config :state)
-                                                               (get-config :exhibitor)
-                                                               (get-config :task-launcher)
-                                                               (get-config :zk-path))))))
+                                                             (get-config :state)
+                                                             (get-config :exhibitor)
+                                                             (get-config :task-launcher)
+                                                             (get-config :zk-path)))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
@@ -70,10 +62,23 @@
   []
   (alter-var-root #'system component/stop))
 
+(defn fetch-task-type
+  [task-type]
+  (if (or (keyword? task-type) (nil? task-type))
+    (condp = task-type
+      nil (do (lein uberjar) sched/jar-task-info)
+      :jar (do (lein uberjar) sched/jar-task-info)
+      :ha (do (lein uberjar) sched/jar-task-info)
+      :shell sched/shell-task-info
+      :docker  sched/docker-task-info)
+    task-type))
+
 (defn go
   "Initializes and starts the system running."
   [& [task-type]]
-  (init task-type)
+  (when task-type
+    (swap! configuration assoc :task-type (fetch-task-type task-type)))
+  (init)
   (start)
   :ready)
 
@@ -81,4 +86,4 @@
   "Stops the system, reloads modified source files, and restarts it."
   []
   (stop)
-  (refresh :after 'user/start))
+  (refresh :after 'user/go))

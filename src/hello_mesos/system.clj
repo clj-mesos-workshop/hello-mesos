@@ -20,7 +20,7 @@
   (component/system-map
    :curator (new-curator exhibitor)
    :zookeeper-state (component/using
-                      (new-zookeeper-state zk-path initial-state)
+                      (new-zookeeper-state initial-state zk-path)
                       [:curator])
    :scheduler (component/using
                (new-scheduler task-launcher)

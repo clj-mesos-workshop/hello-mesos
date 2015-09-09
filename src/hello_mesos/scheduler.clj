@@ -53,8 +53,9 @@
    (resourceOffers [driver offers]
                    (doseq [offer offers]
                      (let [uuid (str (java.util.UUID/randomUUID))]
-                       (if (and (< 0 (:tasks {:tasks 0}))
+                       (if (and (< 0 (:tasks @zk-state))
                                 (resources? (:resources offer)))
                          (let [tasks (task-launcher uuid offer)]
-                           (mesos/launch-tasks driver (:id offer) tasks))
+                           (mesos/launch-tasks driver (:id offer) tasks)
+                           (update-state! zk-state :tasks dec))
                          (mesos/decline-offer driver (:id offer))))))))

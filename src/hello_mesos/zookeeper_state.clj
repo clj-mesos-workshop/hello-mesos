@@ -1,16 +1,17 @@
 (ns hello-mesos.zookeeper-state
   (:require [curator.path-cache :as pc]
+            [clojure.edn :as edn]
             [com.stuartsierra.component :as component])
   (:import [org.apache.curator.utils ZKPaths]
            [org.apache.zookeeper.KeeperException]))
 
 (defn- data->clj
   [byte-data]
-  (apply str (map #(char (bit-and % 255)) byte-data)))
+  (edn/read-string (apply str (map #(char (bit-and % 255)) byte-data))))
 
 (defn- clj->data
-  [stringable]
-  (.getBytes (.toString stringable)))
+  [data]
+  (.getBytes (pr-str data)))
 
 (defn path->key
   [zk-path path]
@@ -27,7 +28,6 @@
 
 (defn- write-data
   [curator path data]
-  (println curator path data)
   (try
     (.. curator
         (setData)
@@ -39,11 +39,11 @@
           (forPath path data)))))
 
 (defn update-state!
-  [zk-state path data]
+  [zk-state path f]
   (let [{:keys [curator zk-path]} zk-state
         framework (:curator curator)
-        data-path (ZKPaths/makePath zk-path path)]
-    (println zk-state framework zk-path)
+        data-path (ZKPaths/makePath zk-path (name path))
+        data (f (@zk-state (path->key zk-path data-path)))]
     (write-data framework data-path (clj->data data))))
 
 (defn- initialize-state

@@ -13,6 +13,6 @@
       (assoc component :scheduler nil))))
 
 (defn new-scheduler
-  [state task-launcher zk-path]
-  (map->Scheduler {:state state :task-launcher task-launcher :zk-path zk-path}))
+  [task-launcher]
+  (map->Scheduler {:task-launcher task-launcher}))
 
