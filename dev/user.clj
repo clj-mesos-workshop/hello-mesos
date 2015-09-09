@@ -9,16 +9,26 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.test :as test]
-            [clojure.tools.namespace.repl :refer [refresh refresh-all]]
+            [clojure.tools.namespace.repl :as repl]
             [alembic.still :refer [lein]]
             [com.stuartsierra.component :as component]
             [hello-mesos.system :as sys]
+            [hello-mesos.zookeeper-state]
             [hello-mesos.scheduler :as sched]
             [clojure.java.shell :refer [sh]]))
 
+(defn refresh
+  [& opts]
+  (remove-method print-method clojure.lang.IDeref)
+  (apply repl/refresh opts))
+
 (def configuration (atom {:master "zk://10.10.4.2:2181/mesos"
-                          :tasks 1
-                          :task-launcher sched/jar-task-info}))
+                          :exhibitor {:hosts []
+                                      :port 2181
+                                      :backup "zk://localhost:2181"}
+                          :state (atom {:tasks 1})
+                          :task-launcher sched/jar-task-info
+                          :zk-path "/hello-mesos"}))
 
 (defn- get-config [k]
   (if-not @configuration
@@ -34,17 +44,20 @@
   "Creates and initializes the system under development in the Var
   #'system."
   [& [task-type]]
-  (condp = task-type
-    :jar (do (lein uberjar)
-             (swap! configuration assoc :task-launcher sched/jar-task-info))
-    :ha (do (lein uberjar)
-            (swap! configuration assoc :task-launcher sched/jar-task-info))
-    :shell (swap! configuration assoc :task-launcher sched/shell-task-info)
-    :docker (swap! configuration assoc :task-launcher sched/docker-task-info))
+  (let [task-type (or task-type :jar)]
+    (condp = task-type
+      :jar (do (lein uberjar)
+               (swap! configuration assoc :task-launcher sched/jar-task-info))
+      :ha (do (lein uberjar)
+              (swap! configuration assoc :task-launcher sched/jar-task-info))
+      :shell (swap! configuration assoc :task-launcher sched/shell-task-info)
+      :docker (swap! configuration assoc :task-launcher sched/docker-task-info))
 
-  (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
-                                                             (get-config :tasks)
-                                                             (get-config :task-launcher)))))
+    (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
+                                                               (get-config :state)
+                                                               (get-config :exhibitor)
+                                                               (get-config :task-launcher)
+                                                               (get-config :zk-path))))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
@@ -68,4 +81,4 @@
   "Stops the system, reloads modified source files, and restarts it."
   []
   (stop)
-  (refresh :after 'user/go))
+  (refresh :after 'user/start))
