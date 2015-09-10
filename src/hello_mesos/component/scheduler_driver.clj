@@ -7,7 +7,7 @@
   (start [component]
     (when-not driver
       (let [driver (mesos/driver (:scheduler scheduler)
-                                 {:user "" :name "hello"}
+                                 {:user "" :name "hello-mesos"}
                                  master)]
         (mesos/start driver)
         (assoc component :driver driver))))

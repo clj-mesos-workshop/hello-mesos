@@ -13,7 +13,7 @@
             [alembic.still :refer [lein]]
             [com.stuartsierra.component :as component]
             [hello-mesos.system :as sys]
-            [hello-mesos.zookeeper-state]
+            [hello-mesos.zookeeper-state :refer [update-state!]]
             [hello-mesos.scheduler :as sched]
             [clojure.java.shell :refer [sh]]))
 
@@ -28,7 +28,6 @@
                                       :backup "zk://localhost:2181"}
                           :state {:tasks 1}
                           :task-launcher sched/jar-task-info
-                          :task-type sched/jar-task-info
                           :zk-path "/hello-mesos"}))
 
 (defn- get-config [k]
@@ -36,31 +35,66 @@
     (println "You have not set the configuration variable yet.")
     (get @configuration k)))
 
+(defn- get-full-config
+  []
+  [(get-config :master)
+   (get-config :state)
+   (get-config :exhibitor)
+   (get-config :task-launcher)
+   (get-config :zk-path)])
+
+(def systems
+  "A Var container a vector of system to test HA modes"
+  nil)
+
+
 (def system
   "A Var containing an object representing the application under
   development."
   nil)
 
+(defn leader
+  "The leading scheduler in HA mode"
+  []
+  (first (filter #(deref (:leader? (:leader-driver %))) systems)))
+
+(defn stop-leader
+  []
+  (-> (leader)
+      :leader-driver
+      deref
+      clj-mesos.scheduler/abort))
+
+(defn init-ha
+  "Creates and initializes the systems under development in the Var
+  #'systems."
+  []
+  (alter-var-root #'systems (->> (repeatedly #(apply sys/ha-scheduler-system (get-full-config)))
+                                 (take 3)
+                                 (into [])
+                                 constantly)))
+
 (defn init
   "Creates and initializes the system under development in the Var
   #'system."
-  [] 
-    (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
-                                                             (get-config :state)
-                                                             (get-config :exhibitor)
-                                                             (get-config :task-launcher)
-                                                             (get-config :zk-path)))))
+  []
+  (alter-var-root #'systems (constantly nil))
+  (alter-var-root #'system (constantly #(apply sys/scheduler-system (get-full-config)))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
   []
-  (alter-var-root #'system component/start))
+  (if systems
+    (alter-var-root #'systems #(mapv component/start %))
+    (alter-var-root #'system component/start)))
 
 (defn stop
   "Stops the system if it is currently running, updates the Var
   #'system."
   []
-  (alter-var-root #'system component/stop))
+  (if systems
+    (alter-var-root #'systems #(mapv component/stop %))
+    (alter-var-root #'system component/stop)))
 
 (defn fetch-task-type
   [task-type]
@@ -68,16 +102,23 @@
     (condp = task-type
       nil (do (lein uberjar) sched/jar-task-info)
       :jar (do (lein uberjar) sched/jar-task-info)
-      :ha (do (lein uberjar) sched/jar-task-info)
       :shell sched/shell-task-info
       :docker  sched/docker-task-info)
     task-type))
+
+(defn go-ha
+  [& [task-type]]
+  (when task-type
+    (swap! configuration assoc :task-launcher (fetch-task-type task-type)))
+  (init-ha)
+  (start)
+  :ready-ha)
 
 (defn go
   "Initializes and starts the system running."
   [& [task-type]]
   (when task-type
-    (swap! configuration assoc :task-type (fetch-task-type task-type)))
+    (swap! configuration assoc :task-launcher (fetch-task-type task-type)))
   (init)
   (start)
   :ready)
@@ -86,4 +127,5 @@
   "Stops the system, reloads modified source files, and restarts it."
   []
   (stop)
-  (refresh :after 'user/go))
+  (let [after-fn (if systems 'user/go-ha 'user/go)]
+    (refresh :after after-fn)))
