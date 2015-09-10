@@ -30,13 +30,15 @@
             [:scheduler])))
 
 (defn ha-scheduler-system
-  [master state exhibitor task-launcher zk-path]
+  [master initial-state exhibitor task-launcher zk-path]
   (component/system-map
    :curator (new-curator exhibitor)
-   :scheduler (new-scheduler state task-launcher)
    :zookeeper-state (component/using
-                      (new-zookeeper-state zk-path state)
-                      [:curator :scheduler])
+                     (new-zookeeper-state initial-state zk-path)
+                     [:curator])
+   :scheduler (component/using
+               (new-scheduler task-launcher)
+               [:zookeeper-state])
    :leader-driver (component/using
                    (new-leader-driver zk-path master "hello-mesos" "hello-mesos")
                    [:curator :scheduler])))
