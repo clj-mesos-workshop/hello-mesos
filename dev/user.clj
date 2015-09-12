@@ -9,20 +9,27 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.test :as test]
-            [clojure.tools.namespace.repl :refer [refresh refresh-all]]
+            [clojure.tools.namespace.repl :as repl]
             [alembic.still :refer [lein]]
             [com.stuartsierra.component :as component]
             [hello-mesos.system :as sys]
+            [hello-mesos.zookeeper-state]
             [hello-mesos.scheduler :as sched]
             [clojure.java.shell :refer [sh]]))
 
-(def configuration (atom nil))
+(defn refresh
+  [& opts]
+  (remove-method print-method clojure.lang.IDeref)
+  (apply repl/refresh opts))
 
-(defn build-uberjar
-  []
-  (println "building jar")
-  (sh "lein" "uberjar"))
-
+(def configuration (atom {:master "zk://10.10.4.2:2181/mesos"
+                          :exhibitor {:hosts []
+                                      :port 2181
+                                      :backup "zk://localhost:2181"}
+                          :state {:tasks 1}
+                          :task-launcher sched/jar-task-info
+                          :task-type sched/jar-task-info
+                          :zk-path "/hello-mesos"}))
 
 (defn- get-config [k]
   (if-not @configuration
@@ -37,13 +44,12 @@
 (defn init
   "Creates and initializes the system under development in the Var
   #'system."
-  []
-;;  (alter-var-root #'system (constantly (sys/scheduler-system (get-config :mesos-master) 1))))
-  ;;(build-uberjar)
-  (lein uberjar)
-  (alter-var-root #'system (constantly (sys/scheduler-system "zk://10.10.4.2:2181/mesos"
-                                                             1
-                                                             sched/jar-task-info))))
+  [] 
+    (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
+                                                             (get-config :state)
+                                                             (get-config :exhibitor)
+                                                             (get-config :task-launcher)
+                                                             (get-config :zk-path)))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
@@ -56,9 +62,22 @@
   []
   (alter-var-root #'system component/stop))
 
+(defn fetch-task-type
+  [task-type]
+  (if (or (keyword? task-type) (nil? task-type))
+    (condp = task-type
+      nil (do (lein uberjar) sched/jar-task-info)
+      :jar (do (lein uberjar) sched/jar-task-info)
+      :ha (do (lein uberjar) sched/jar-task-info)
+      :shell sched/shell-task-info
+      :docker  sched/docker-task-info)
+    task-type))
+
 (defn go
   "Initializes and starts the system running."
-  []
+  [& [task-type]]
+  (when task-type
+    (swap! configuration assoc :task-type (fetch-task-type task-type)))
   (init)
   (start)
   :ready)

@@ -2,18 +2,17 @@
   (:require [com.stuartsierra.component :as component]
             [hello-mesos.scheduler :as sched]))
 
-(defrecord Scheduler [number-of-tasks task-launcher state scheduler]
+(defrecord Scheduler [task-launcher zookeeper-state scheduler]
   component/Lifecycle
   (start [component]
     (when-not scheduler
-      (let [state (atom {:to-launch number-of-tasks})
-            scheduler (sched/scheduler state task-launcher)]
-        (assoc component :state state :scheduler scheduler))))
+      (let [scheduler (sched/scheduler zookeeper-state task-launcher)]
+        (assoc component :scheduler scheduler))))
   (stop [component]
     (when scheduler
-      (assoc component :state nil :scheduler nil))))
+      (assoc component :scheduler nil))))
 
 (defn new-scheduler
-  [number-of-tasks task-launcher]
-  (map->Scheduler {:number-of-tasks number-of-tasks :task-launcher task-launcher}))
+  [task-launcher]
+  (map->Scheduler {:task-launcher task-launcher}))
 

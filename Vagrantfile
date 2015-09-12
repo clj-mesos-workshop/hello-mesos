@@ -12,11 +12,12 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define "master" do |master|
+    master.vm.network "forwarded_port", guest: 5050, host: 5050
+    master.vm.network "forwarded_port", guest: 2181, host: 2181
     master.vm.network "private_network", ip: "10.10.4.2"
     master.vm.hostname = "master"
 
     master.vm.provision "shell", inline: <<-SHELL
-      sed -i.bak '9,10d' /etc/network/interfaces && sudo ifdown eth1 && sudo ifup eth1
       echo "10.10.4.2" > /etc/mesos-master/ip
       rm -f /etc/init/zookeeper.override
       service zookeeper restart
@@ -37,7 +38,6 @@ Vagrant.configure(2) do |config|
       slave.vm.network "private_network", ip: "10.10.4.1#{n}"
       slave.vm.hostname = "slave-#{n}"
       slave.vm.provision "shell", inline: <<-SHELL
-        sed -i.bak '9,10d' /etc/network/interfaces && sudo ifdown eth1 && sudo ifup eth1
         echo "zk://10.10.4.2:2181/mesos" > /etc/mesos/zk
         echo "10.10.4.1#{n}" > /etc/mesos-slave/ip
 
