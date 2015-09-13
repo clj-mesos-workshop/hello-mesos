@@ -1,8 +1,10 @@
 (ns user
   "Tools for interactive development with the REPL. This file should
   not be included in a production build of the application."
-  (:require [clojure.java.io :as io]
+  (:require [alembic.still :refer [lein]]
+            [clojure.java.io :as io]
             [clojure.java.javadoc :refer [javadoc]]
+            [clojure.java.shell :refer [sh]]
             [clojure.pprint :refer [pprint]]
             [clojure.reflect :refer [reflect]]
             [clojure.repl :refer [apropos dir doc find-doc pst source]]
@@ -10,19 +12,19 @@
             [clojure.string :as str]
             [clojure.test :as test]
             [clojure.tools.namespace.repl :as repl]
-            [alembic.still :refer [lein]]
             [com.stuartsierra.component :as component]
-            [hello-mesos.system :as sys]
-            [hello-mesos.zookeeper-state]
             [hello-mesos.scheduler :as sched]
-            [clojure.java.shell :refer [sh]]))
+            [hello-mesos.system :as sys]
+            [hello-mesos.zookeeper-state]))
 
 (defn refresh
   [& opts]
   (remove-method print-method clojure.lang.IDeref)
   (apply repl/refresh opts))
 
-(def configuration (atom {:master "zk://10.10.4.2:2181/mesos"
+(def configuration
+  "Configuration for the system "
+  (atom {:master "zk://10.10.4.2:2181/mesos"
                           :exhibitor {:hosts []
                                       :port 2181
                                       :backup "zk://localhost:2181"}
@@ -44,7 +46,7 @@
 (defn init
   "Creates and initializes the system under development in the Var
   #'system."
-  [] 
+  []
     (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
                                                              (get-config :state)
                                                              (get-config :exhibitor)

@@ -49,10 +49,10 @@
   [zk-state task-launcher]
   (mesos/scheduler
    (statusUpdate [driver status]
-                                        ;(println "[DEBUG]" status)
+                 ;;(println "[DEBUG]" status)
                  (condp = (:state status)
                    :task-running (println status)
-                   :task-lost (swap! scheduler-state update-in [:to-launch] inc)
+                   :task-lost (swap! zk-state update-in [:to-launch] inc)
                    (println "[statusUpdate]" status)))
    (resourceOffers [driver offers]
                    (doseq [offer offers]
