@@ -97,16 +97,8 @@
   "Creates and initializes the system under development in the Var
   #'system."
   []
-<<<<<<< HEAD
-    (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
-                                                             (get-config :state)
-                                                             (get-config :exhibitor)
-                                                             (get-config :task-launcher)
-                                                             (get-config :zk-path)))))
-=======
   (alter-var-root #'systems (constantly nil))
   (alter-var-root #'system (constantly (apply sys/scheduler-system (get-full-config)))))
->>>>>>> ha-failover
 
 (defn start
   "Starts the system running, updates the Var #'system."
