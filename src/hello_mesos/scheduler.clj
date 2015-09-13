@@ -1,9 +1,10 @@
 (ns hello-mesos.scheduler
   (:require [clj-mesos.scheduler :as mesos]
+            [clojure.tools.logging :as log]
             [hello-mesos.zookeeper-state :refer [update-state!]])
   (:import [org.apache.curator.utils ZKPaths]))
 
-(def min-cpu 0.5)
+(def min-cpu 0.1)
 (def min-mem 128.0)
 
 (defn jar-task-info
@@ -34,29 +35,35 @@
     :slave-id slave-id
     :resources {:cpus min-cpu
                 :mem min-mem}
-    :executor {:executor-id "hello-mesos-executor"
-               :command {:shell true
-                         :container {:type :docker
-                                     :image ""
-                                     }}}}])
+    :container {:type :docker
+                :image "busybox"
+                }}])
 
 (defn resources?
   [{:keys [cpus mem]}]
-  (and (>= cpus min-cpu)
+  (and cpus mem
+       (>= cpus min-cpu)
        (>= mem min-mem)))
 
 (defn scheduler
   [zk-state task-launcher]
   (mesos/scheduler
    (statusUpdate [driver status]
-                 ;;(println "[DEBUG]" status)
                  (condp = (:state status)
-                   :task-running (println status)
-                   :task-lost (swap! zk-state update-in [:to-launch] inc)
-                   (println "[statusUpdate]" status)))
+                   :task-lost (update-state! zk-state :tasks inc)
+                   false))
+   (registered [driver framework-id master]
+               (update-state! zk-state :framework-id (constantly framework-id)))
+   (reregistered [driver master]
+                 ;; (println "[reregistered]"
+                 ))
+   (error [driver message]
+          ;; (println "[error]" message)
+          (update-state! zk-state :framework-id (constantly nil)))
    (resourceOffers [driver offers]
                    (doseq [offer offers]
-                                        ;(println "[resourceOffers]" offer)
+                     ;;                  (println @zk-state)
+                     ;; (println "[resourceOffers]" offer)
                      (let [uuid (str (java.util.UUID/randomUUID))]
                        (if (and (< 0 (:tasks @zk-state))
                                 (resources? (:resources offer)))

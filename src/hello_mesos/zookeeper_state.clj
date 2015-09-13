@@ -5,11 +5,11 @@
   (:import [org.apache.curator.utils ZKPaths]
            [org.apache.zookeeper.KeeperException]))
 
-(defn- data->clj
+(defn- bytes->clj
   [byte-data]
   (edn/read-string (apply str (map #(char (bit-and % 255)) byte-data))))
 
-(defn- clj->data
+(defn- clj->bytes
   [data]
   (.getBytes (pr-str data)))
 
@@ -22,21 +22,22 @@
   [child-data zk-state]
   (reduce (fn [child-map datum]
             (let [key (path->key (:zk-path zk-state) (.getPath datum))
-                  data (data->clj (.getData datum))]
+                  data (bytes->clj (.getData datum))]
               (assoc child-map key data)))
           {} child-data))
 
 (defn- write-data
-  [curator path data]
+  [curator path data & {:keys [overwrite]}]
   (try
     (.. curator
-        (setData)
+        (create)
+        (creatingParentsIfNeeded)
         (forPath path data))
-    (catch org.apache.zookeeper.KeeperException$NoNodeException e
-      (.. curator
-          (create)
-          (creatingParentsIfNeeded)
-          (forPath path data)))))
+    (catch org.apache.zookeeper.KeeperException$NodeExistsException e
+      (if overwrite
+        (.. curator
+            (setData)
+            (forPath path data))))))
 
 (defn update-state!
   [zk-state path f]
@@ -44,14 +45,14 @@
         framework (:curator curator)
         data-path (ZKPaths/makePath zk-path (name path))
         data (f (@zk-state (path->key zk-path data-path)))]
-    (write-data framework data-path (clj->data data))))
+    (write-data framework data-path (clj->bytes data) :overwrite true)))
 
 (defn- initialize-state
   [framework path initial-state]
   (doseq [[key data] initial-state]
     (let [data-path (ZKPaths/makePath path (name key))
-          data (clj->data data)]
-      (write-data framework data-path data))))
+          data (clj->bytes data)]
+      (write-data framework data-path data :overwrite false))))
 
 (defn- new-path-cache
   [curator path]
@@ -78,17 +79,17 @@
 
 (defn new-zookeeper-state
   [initial-state path]
-  (map->ZookeeperState {:initial-state initial-state :zk-path path}))
+  (map->ZookeeperState {:initial-state initial-state :zk-path (str path "/state")}))
 
 (comment
- (require '[com.stuartsierra.component :as comp])
- (require '[hello-mesos.component.curator :as c])
- (require '[hello-mesos.zookeeper-state :as zks])
- (def s (-> (c/new-curator {:port 2181 :hosts [] :backup "zk://localhost:2181"})
-     comp/start
-     (zks/->ZookeeperState {} "/hello-test" nil)
-     comp/start
-     ))
-)
+  (require '[com.stuartsierra.component :as comp])
+  (require '[hello-mesos.component.curator :as c])
+  (require '[hello-mesos.zookeeper-state :as zks])
+  (def s (-> (c/new-curator {:port 2181 :hosts [] :backup "zk://localhost:2181"})
+             comp/start
+             (zks/->ZookeeperState {} "/hello-test" nil)
+             comp/start
+             ))
+  )
 
 

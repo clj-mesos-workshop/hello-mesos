@@ -4,7 +4,7 @@
   :license {:name "MIT"
             :url "https://github.com/edpaget/hello-mesos/LICENSE"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [edpaget/clj-mesos "0.22.1-SNAPSHOT"]
+                 [clj-mesos "0.22.0"]
                  [curator "0.0.6"]
                  [com.stuartsierra/component "0.2.3"]
                  [org.clojure/tools.logging "0.2.6"]
