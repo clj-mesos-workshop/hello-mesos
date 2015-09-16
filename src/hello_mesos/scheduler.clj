@@ -35,9 +35,10 @@
     :slave-id slave-id
     :resources {:cpus min-cpu
                 :mem min-mem}
+    :command {:shell true
+              :value "while true; do echo \"Hey Mesos\"; sleep 5; done"}
     :container {:type :docker
-                :image "busybox"
-                }}])
+                :docker {:image "busybox"}}}])
 
 (defn resources?
   [{:keys [cpus mem]}]
@@ -50,8 +51,10 @@
   (mesos/scheduler
    (statusUpdate [driver status]
                  (condp = (:state status)
+                   :task-failed (update-state! zk-state :tasks inc)
                    :task-lost (update-state! zk-state :tasks inc)
-                   false))
+                   false)
+                 (println "[statusUpdate]" status))
    (registered [driver framework-id master]
                (update-state! zk-state :framework-id (constantly framework-id)))
    (reregistered [driver master]

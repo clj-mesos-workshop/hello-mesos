@@ -40,6 +40,7 @@ Vagrant.configure(2) do |config|
       slave.vm.provision "shell", inline: <<-SHELL
         echo "zk://10.10.4.2:2181/mesos" > /etc/mesos/zk
         echo "10.10.4.1#{n}" > /etc/mesos-slave/ip
+        echo "mesos,docker" > /etc/mesos-slave/containerizers
 
         rm -f /etc/init/mesos-slave.override
         service mesos-slave restart
