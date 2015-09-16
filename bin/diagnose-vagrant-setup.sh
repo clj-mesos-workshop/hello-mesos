@@ -1,5 +1,6 @@
 #!/bin/bash
 CURDIR=$(dirname "$0")
+ROOTDIR="$CURDIR/.."
 EXPECTED_MASTER_IP="10.10.4.2"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -46,7 +47,7 @@ get_slaves_count(){
     then
         return $MESOS_SLAVES;
     else
-        echo $(grep MESOS_SLAVES $CURDIR/Vagrantfile | tr -d '[:alpha:][:punct:][:blank:]');
+        echo $(grep MESOS_SLAVES $ROOTDIR/Vagrantfile | tr -d '[:alpha:][:punct:][:blank:]');
     fi
 }
 
