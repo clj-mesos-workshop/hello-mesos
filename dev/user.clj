@@ -29,7 +29,7 @@
                                       :port 2181
                                       :backup "zk://localhost:2181"}
                           :state {:tasks 1}
-                          :task-launcher sched/jar-task-info
+                          :task-launcher sched/shell-task-info
                           :zk-path "/hm"}))
 
 (defn- get-config [k]
@@ -119,7 +119,6 @@
   [task-type]
   (if (or (keyword? task-type) (nil? task-type))
     (condp = task-type
-      nil (do (lein uberjar) sched/jar-task-info)
       :jar (do (lein uberjar) sched/jar-task-info)
       :shell sched/shell-task-info
       :docker  sched/docker-task-info)
