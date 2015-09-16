@@ -56,7 +56,7 @@
                (update-state! zk-state :framework-id (constantly framework-id)))
    (reregistered [driver master]
                  ;; (println "[reregistered]"
-                 ))
+                 )
    (error [driver message]
           ;; (println "[error]" message)
           (update-state! zk-state :framework-id (constantly nil)))
