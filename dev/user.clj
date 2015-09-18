@@ -17,13 +17,26 @@
             [hello-mesos.scheduler :as sched]))
 
 (def configuration (atom {:master "zk://10.10.4.2:2181/mesos"
-                          :tasks 1
-                          :task-launcher sched/jar-task-info}))
+                          :exhibitor {:hosts []
+                                      :port 2181
+                                      :backup "zk://localhost:2181"}
+                          :state {:tasks 1}
+                          :task-launcher sched/shell-task-info
+                          :zk-path "/hello-mesos"}))
 
 (defn- get-config [k]
   (if-not @configuration
     (println "You have not set the configuration variable yet.")
     (get @configuration k)))
+
+(defn- config-as-vector
+  []
+  [(get-config :master)
+   (get-config :state)
+   (get-config :exhibitor)
+   (get-config :task-launcher)
+   (get-config :zk-path)])
+
 
 (def system
   "A Var containing an object representing the application under
@@ -34,9 +47,7 @@
   "Creates and initializes the system under development in the Var
   #'system."
   []
-  (alter-var-root #'system (constantly (sys/scheduler-system (get-config :master)
-                                                             (get-config :tasks)
-                                                             (get-config :task-launcher)))))
+  (alter-var-root #'system (constantly (apply sys/scheduler-system (config-as-vector)))))
 
 (defn start
   "Starts the system running, updates the Var #'system."
@@ -54,7 +65,6 @@
   [& [task-type]]
   (when-let [task-fn (if (or (keyword? task-type) (nil? task-type))
                        (condp = task-type
-                         nil sched/jar-task-info
                          :jar sched/jar-task-info
                          :shell sched/shell-task-info
                          :docker  sched/docker-task-info)

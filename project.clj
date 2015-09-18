@@ -5,6 +5,7 @@
             :url "TODO: LINK TO IT" }
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [clj-mesos "0.22.0"]
+                 [curator "0.0.6"]
                  [com.stuartsierra/component "0.2.3"]]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.7"]
