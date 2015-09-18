@@ -1,5 +1,6 @@
 (ns hello-mesos.scheduler
-  (:require [clj-mesos.scheduler :as mesos]))
+  (:require [clj-mesos.scheduler :as mesos]
+            [hello-mesos.zookeeper-state :refer [update-state!]]))
 
 (def min-cpu 0.5)
 (def min-mem 128.0)
@@ -43,23 +44,25 @@
        (>= mem min-mem)))
 
 (defn scheduler
-  [scheduler-state task-launcher]
+  [zk-state task-launcher]
   (mesos/scheduler
    (statusUpdate [driver status]
                  ;; Invoked when the status of a task has changed (e.g., a slave is lost and so the task is lost, a task finishes and an executor sends a status update saying so, etc).
                  (condp = (:state status)
-                   :task-lost (swap! scheduler-state update-in [:to-launch] inc)
-                   (println "[statusUpdate]" status)))
+                   :task-failed (update-state! zk-state :tasks inc)
+                   :task-lost (update-state! zk-state :tasks inc)
+                   false)
+                 (println "[statusUpdate]" status))
    (resourceOffers [driver offers]
                    ;; Invoked when resources have been offered to this framework.
                    (doseq [offer offers]
                      (println "[resourceOffers]" offer)
                      (let [uuid (str (java.util.UUID/randomUUID))]
-                       (if (and (< 0 (:to-launch @scheduler-state))
+                       (if (and (< 0 (:tasks @zk-state))
                                 (resources? (:resources offer)))
                          (let [tasks (task-launcher uuid offer)]
                            (mesos/launch-tasks driver (:id offer) tasks)
-                           (swap! scheduler-state update-in [:to-launch] dec))
+                           (update-state! zk-state :tasks dec))
                          (mesos/decline-offer driver (:id offer))))))
    (disconnected [driver]
                  ;; Invoked when the scheduler becomes "disconnected" from the master (e.g., the master fails and another is taking over).
