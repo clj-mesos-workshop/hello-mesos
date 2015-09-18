@@ -64,6 +64,7 @@
                            (mesos/launch-tasks driver (:id offer) tasks)
                            (update-state! zk-state :tasks dec))
                          (mesos/decline-offer driver (:id offer))))))
+
    (disconnected [driver]
                  ;; Invoked when the scheduler becomes "disconnected" from the master (e.g., the master fails and another is taking over).
                  )
@@ -80,6 +81,7 @@
                    ;; Invoked when an offer is no longer valid (e.g., the slave was lost or another framework used resources in the offer).
                    )
    (registered [driver framework-id masterInfo]
+               (update-state! zk-state :framework-id (constantly framework-id))
                ;; Invoked when the scheduler successfully registers with a Mesos master.
                )
    (reregistered [driver masterInfo]

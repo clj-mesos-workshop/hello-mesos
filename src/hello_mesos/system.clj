@@ -26,7 +26,7 @@
                [:zookeeper-state])
    :driver (component/using
             (new-scheduler-driver master)
-            [:scheduler])))
+            [:scheduler :zookeeper-state])))
 
 (defn -main
   [command-type & [scheduler-type master n-tasks exhibitor-hosts exhibitor-port exhibitor-backup zk-path & _]]

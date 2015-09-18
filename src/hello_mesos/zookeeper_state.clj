@@ -39,6 +39,19 @@
             (setData)
             (forPath path data))))))
 
+(defn read-state
+  [zk-state key]
+  (let [{:keys [curator zk-path]} zk-state
+        framework (:curator curator)
+        path (ZKPaths/makePath zk-path (name key))]
+    (try
+      (bytes->clj (.. framework
+                      (getData)
+                      (forPath path)))
+      (catch org.apache.zookeeper.KeeperException$NoNodeException e
+        nil))))
+
+
 (defn update-state!
   [zk-state path f]
   (let [{:keys [curator zk-path]} zk-state
@@ -80,16 +93,3 @@
 (defn new-zookeeper-state
   [initial-state path]
   (map->ZookeeperState {:initial-state initial-state :zk-path (str path "/state")}))
-
-(comment
-  (require '[com.stuartsierra.component :as comp])
-  (require '[hello-mesos.component.curator :as c])
-  (require '[hello-mesos.zookeeper-state :as zks])
-  (def s (-> (c/new-curator {:port 2181 :hosts [] :backup "zk://localhost:2181"})
-             comp/start
-             (zks/->ZookeeperState {} "/hello-test" nil)
-             comp/start
-             ))
-  )
-
-
