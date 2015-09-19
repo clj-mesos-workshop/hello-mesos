@@ -22,9 +22,12 @@
                           :exhibitor {:hosts []
                                       :port 2181
                                       :backup "zk://localhost:2181"}
-                          :state {:tasks 1}
+                          :state {:tasks-to-run 2
+                                  :staging-tasks #{}
+                                  :running-tasks #{}}
                           :task-launcher sched/shell-task-info
-                          :zk-path "/hello-mesos"}))
+                          :zk-path "/hello-mesos"
+                          :web-ui-port 8088}))
 
 (defn- get-config [k]
   (if-not @configuration
@@ -37,7 +40,8 @@
    (get-config :state)
    (get-config :exhibitor)
    (get-config :task-launcher)
-   (get-config :zk-path)])
+   (get-config :zk-path)
+   (get-config :web-ui-port)])
 
 (def systems
   "A Var container a vector of system to test HA modes"
