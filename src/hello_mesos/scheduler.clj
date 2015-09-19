@@ -70,7 +70,8 @@
                  )
    (error [driver message]
           ;; Invoked when there is an unrecoverable error in the scheduler or driver.
-          )
+          ;; (println "[error]" message)
+          (update-state! zk-state :framework-id (constantly nil)))
    (executorLost [driver executor-id slave-id status]
                  ;; Invoked when an executor has exited/terminated.
                  )

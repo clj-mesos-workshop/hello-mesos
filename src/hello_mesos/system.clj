@@ -2,6 +2,7 @@
   (:require [com.stuartsierra.component :as component]
             [hello-mesos.component.executor-driver :refer [new-executor-driver]]
             [hello-mesos.component.scheduler-driver :refer [new-scheduler-driver]]
+            [hello-mesos.component.leader-driver :refer [new-leader-driver]]
             [hello-mesos.component.scheduler :refer [new-scheduler]]
             [hello-mesos.component.curator :refer [new-curator]]
             [hello-mesos.zookeeper-state :refer [new-zookeeper-state]]
@@ -28,6 +29,29 @@
             (new-scheduler-driver master)
             [:scheduler :zookeeper-state])))
 
+(defn ha-scheduler-system
+  [master initial-state exhibitor task-launcher zk-path]
+  (component/system-map
+   :curator (new-curator exhibitor)
+   :zookeeper-state (component/using
+                     (new-zookeeper-state initial-state zk-path)
+                     [:curator])
+   :scheduler (component/using
+               (new-scheduler task-launcher)
+               [:zookeeper-state])
+   :leader-driver (component/using
+                   (new-leader-driver zk-path master "hello-mesos" "hello-mesos")
+                   [:curator :scheduler])))
+
+(defn leader?
+  "Returns true if the system is currently the leader."
+  [sys]
+  (let [driver (-> (:leader-driver sys)
+                   :driver
+                   deref)]
+    (and driver
+         (not (keyword? driver)))))
+
 (defn -main
   [command-type & [scheduler-type master n-tasks exhibitor-hosts exhibitor-port exhibitor-backup zk-path & _]]
   (let [state {:tasks n-tasks}
@@ -38,6 +62,7 @@
                  ["scheduler" "jar"] (scheduler-system master state exhibitor sched/jar-task-info zk-path)
                  ["scheduler" "shell"] (scheduler-system master state exhibitor sched/shell-task-info zk-path)
                  ["scheduler" "docker"] (scheduler-system master state exhibitor sched/docker-task-info zk-path)
+                 ["scheduler" "ha"] (scheduler-system master state exhibitor sched/docker-task-info zk-path)
                  ["executor" nil] (executor-system))]
     (component/start system)
     (while true
