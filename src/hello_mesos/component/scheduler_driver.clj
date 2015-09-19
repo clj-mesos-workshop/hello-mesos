@@ -8,6 +8,7 @@
   (let [framework-info {:user ""
                         :name "hello-mesos"
                         :checkpoint true
+                        :webui-url "http://10.10.4.2:8088"
                         :failover-timeout 60}
         id (read-state zk-state :framework-id)
         framework-info (if id
