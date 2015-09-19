@@ -3,6 +3,7 @@
             [hello-mesos.component.executor-driver :refer [new-executor-driver]]
             [hello-mesos.component.scheduler-driver :refer [new-scheduler-driver]]
             [hello-mesos.component.leader-driver :refer [new-leader-driver]]
+            [hello-mesos.component.web-ui :refer [new-web-ui]]
             [hello-mesos.component.scheduler :refer [new-scheduler]]
             [hello-mesos.component.curator :refer [new-curator]]
             [hello-mesos.zookeeper-state :refer [new-zookeeper-state]]
@@ -16,7 +17,7 @@
    :driver (new-executor-driver (executor))))
 
 (defn scheduler-system
-  [master initial-state exhibitor task-launcher zk-path]
+  [master initial-state exhibitor task-launcher zk-path port]
   (component/system-map
    :curator (new-curator exhibitor)
    :zookeeper-state (component/using
@@ -27,10 +28,13 @@
                [:zookeeper-state])
    :driver (component/using
             (new-scheduler-driver master)
-            [:scheduler :zookeeper-state])))
+            [:scheduler :zookeeper-state])
+   :web-ui (component/using
+            (new-web-ui port)
+            [:zookeeper-state])))
 
 (defn ha-scheduler-system
-  [master initial-state exhibitor task-launcher zk-path]
+  [master initial-state exhibitor task-launcher zk-path port]
   (component/system-map
    :curator (new-curator exhibitor)
    :zookeeper-state (component/using
@@ -53,17 +57,32 @@
          (not (keyword? driver)))))
 
 (defn -main
-  [command-type & [scheduler-type master n-tasks exhibitor-hosts exhibitor-port exhibitor-backup zk-path & _]]
+  [command-type & [scheduler-type
+                   master
+                   n-tasks
+                   exhibitor-hosts
+                   exhibitor-port
+                   exhibitor-backup
+                   zk-path
+                   web-ui-port & _]]
   (let [state {:tasks n-tasks}
         exhibitor {:hosts (into [] (clojure.string/split #"," exhibitor-hosts))
                    :port (Integer/parseInt exhibitor-port)
                    :backup exhibitor-backup}
-        system (condp = [command-type scheduler-type]
-                 ["scheduler" "jar"] (scheduler-system master state exhibitor sched/jar-task-info zk-path)
-                 ["scheduler" "shell"] (scheduler-system master state exhibitor sched/shell-task-info zk-path)
-                 ["scheduler" "docker"] (scheduler-system master state exhibitor sched/docker-task-info zk-path)
-                 ["scheduler" "ha"] (scheduler-system master state exhibitor sched/docker-task-info zk-path)
-                 ["executor" nil] (executor-system))]
-    (component/start system)
-    (while true
-      (Thread/sleep 1000000))))
+        system (if (= "scheduler" command-type)
+                 (let [task-fn (condp = scheduler-type
+                                 "jar" sched/jar-task-info
+                                 "shell" sched/shell-task-info
+                                 "docker" sched/docker-task-info
+                                 "ha" sched/shell-task-info)
+                       system-fn (if (= "ha" scheduler-type) ha-scheduler-system scheduler-system)]
+                   (system-fn master
+                              state
+                              exhibitor
+                              task-fn
+                              zk-path
+                              web-ui-port))
+                 (executor-system))]
+        (component/start system)
+        (while true
+          (Thread/sleep 1000000))))

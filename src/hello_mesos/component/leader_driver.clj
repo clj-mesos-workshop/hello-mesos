@@ -9,6 +9,7 @@
   (let [info {:user "vagrant"
               :name "hello-mesos"
               :checkpoint true
+              :webui-url "http://10.10.4.2:8088"
               :failover-time 360}]
     (if id
       (assoc info :id id)
