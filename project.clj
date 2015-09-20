@@ -10,6 +10,7 @@
                  [compojure "1.4.0"]
                  [enlive "1.1.6"]
                  [ring/ring-defaults "0.1.5"]
+                 [org.apache.curator/curator-test "2.8.0"]
                  [com.stuartsierra/component "0.2.3"]]
   :target-path "target/%s"
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.7"]
