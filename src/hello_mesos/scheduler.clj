@@ -112,7 +112,6 @@
                    )
    (registered [driver framework-id master-info]
                ;; Invoked when the scheduler successfully registers with a Mesos master.
-<<<<<<< c94bcfa17eba829950293c03cf578bb84b6fad15
                (if (= framework-id (:framework-id @zk-state))
                  (let [tasks (map (fn [task] {:task-id task :state :task-running})
                                   (concat (:running-tasks @zk-state)
