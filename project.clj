@@ -1,8 +1,8 @@
 (defproject hello-mesos "0.1.0-SNAPSHOT"
   :description "Lein template for Apache Mesos Frameworks"
-  :url "TODO: ADD LINK TO WEBSITE"
-  :license {:name "TODO: CHOOSE A LICENSE"
-            :url "TODO: LINK TO IT" }
+  :url "https://github.com/clj-mesos-workshop/hello-mesos"
+  :license {:name "MIT"
+            :url "https://github.com/clj-mesos-workshop/hello-mesos/blob/master/LICENSE"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [clj-mesos "0.22.0"]
                  [curator "0.0.6"]
