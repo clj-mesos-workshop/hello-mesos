@@ -13,6 +13,7 @@
                  [org.apache.curator/curator-test "2.8.0"]
                  [com.stuartsierra/component "0.2.3"]]
   :target-path "target/%s"
+  :local-repo ".m2"
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.7"]
                                   [alembic "0.3.2"]]
                    :source-paths ["dev"]}
